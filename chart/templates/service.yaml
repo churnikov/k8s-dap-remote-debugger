@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "k8s-remote-debugger.fullname" . }}
+  labels:
+    {{- include "k8s-remote-debugger.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "k8s-remote-debugger.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+    {{- if .Values.debug.enabled }}
+    - name: debugpy
+      port: {{ .Values.debug.port }}
+      targetPort: {{ .Values.debug.port }}
+    {{- end }}
