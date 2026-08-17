@@ -18,6 +18,11 @@ spec:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: CELERY_BROKER_URL
+              value: {{ .Values.celery.brokerUrl | quote }}
+            - name: CELERY_RESULT_BACKEND
+              value: {{ .Values.celery.resultBackend | quote }}
           command:
             {{- if .Values.debug.enabled }}
             - python
@@ -64,3 +69,62 @@ spec:
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{- range $index, $worker := .Values.workers }}
+        - name: {{ $worker.name }}
+          image: "{{ $worker.image.repository }}:{{ $worker.image.tag }}"
+          imagePullPolicy: {{ $worker.image.pullPolicy }}
+          env:
+            - name: CELERY_BROKER_URL
+              value: {{ $.Values.celery.brokerUrl | quote }}
+            - name: CELERY_RESULT_BACKEND
+              value: {{ $.Values.celery.resultBackend | quote }}
+          command:
+            {{- if $worker.debug.enabled }}
+            - python
+            - -m
+            - debugpy
+            - --listen
+            - 0.0.0.0:{{ $worker.debug.port }}
+            {{- if $worker.debug.waitForClient }}
+            - --wait-for-client
+            {{- end }}
+            - -m
+            - celery
+            {{- else }}
+            - celery
+            {{- end }}
+            - -A
+            - celery_app:celery_app
+            - worker
+            - --loglevel=info
+            - --queues={{ $worker.queue }}
+            - --hostname={{ $worker.name }}@%h
+            - --concurrency={{ $worker.concurrency }}
+          {{- if $worker.debug.enabled }}
+          ports:
+            - name: {{ printf "w%d-debug" $index }}
+              containerPort: {{ $worker.debug.port }}
+          {{- end }}
+          resources:
+            {{- toYaml $worker.resources | nindent 12 }}
+        {{- end }}
+        {{- if .Values.redis.enabled }}
+        - name: redis
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.port }}
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{- end }}

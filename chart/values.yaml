@@ -8,10 +8,67 @@ image:
   tag: local
   pullPolicy: Never
 
+celery:
+  brokerUrl: redis://127.0.0.1:6379/0
+  resultBackend: redis://127.0.0.1:6379/1
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+  port: 6379
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
 debug:
   enabled: true
   port: 5678
   waitForClient: false
+
+workers:
+  - name: worker-default
+    queue: default
+    concurrency: 1
+    image:
+      repository: k8s-remote-debugger-worker-default
+      tag: local
+      pullPolicy: Never
+    debug:
+      enabled: true
+      port: 5679
+      waitForClient: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+  - name: worker-math
+    queue: math
+    concurrency: 1
+    image:
+      repository: k8s-remote-debugger-worker-math
+      tag: local
+      pullPolicy: Never
+    debug:
+      enabled: true
+      port: 5680
+      waitForClient: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
 
 service:
   type: ClusterIP

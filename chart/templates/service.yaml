@@ -17,3 +17,10 @@ spec:
       port: {{ .Values.debug.port }}
       targetPort: {{ .Values.debug.port }}
     {{- end }}
+    {{- range $index, $worker := .Values.workers }}
+    {{- if $worker.debug.enabled }}
+    - name: {{ printf "w%d-debug" $index }}
+      port: {{ $worker.debug.port }}
+      targetPort: {{ $worker.debug.port }}
+    {{- end }}
+    {{- end }}

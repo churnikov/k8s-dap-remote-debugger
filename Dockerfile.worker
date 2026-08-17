@@ -1,0 +1,22 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    CELERY_BROKER_URL=redis://127.0.0.1:6379/0 \
+    CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/1 \
+    CELERY_WORKER_CONCURRENCY=1
+
+ARG CELERY_WORKER_QUEUE=default
+ARG CELERY_WORKER_NAME=worker
+
+ENV CELERY_WORKER_QUEUE=${CELERY_WORKER_QUEUE} \
+    CELERY_WORKER_NAME=${CELERY_WORKER_NAME}
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY celery_app.py tasks.py .
+
+CMD ["sh", "-c", "celery -A celery_app:celery_app worker --loglevel=info --queues=${CELERY_WORKER_QUEUE} --hostname=${CELERY_WORKER_NAME}@%h --concurrency=${CELERY_WORKER_CONCURRENCY}"]
