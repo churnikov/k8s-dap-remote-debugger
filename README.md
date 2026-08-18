@@ -32,7 +32,7 @@ docker build -f Dockerfile.worker \
 
 ## Deploy with Helm
 
-The Helm chart is in `chart/`. It expects the image to already exist inside your local cluster runtime.
+The Helm chart is in `chart/`. Rancher Desktop is the only supported local Kubernetes runtime, and it expects the image to already exist inside that runtime.
 
 ### Rancher Desktop
 
@@ -71,42 +71,6 @@ docker build -f Dockerfile.worker \
   --build-arg CELERY_WORKER_QUEUE=math \
   --build-arg CELERY_WORKER_NAME=worker-math \
   -t k8s-remote-debugger-worker-math:local .
-helm upgrade --install k8s-remote-debugger ./chart
-```
-
-### kind
-
-```bash
-docker build -t k8s-remote-debugger:local .
-docker build -f Dockerfile.worker \
-  --build-arg CELERY_WORKER_QUEUE=default \
-  --build-arg CELERY_WORKER_NAME=worker-default \
-  -t k8s-remote-debugger-worker-default:local .
-docker build -f Dockerfile.worker \
-  --build-arg CELERY_WORKER_QUEUE=math \
-  --build-arg CELERY_WORKER_NAME=worker-math \
-  -t k8s-remote-debugger-worker-math:local .
-kind load docker-image k8s-remote-debugger:local
-kind load docker-image k8s-remote-debugger-worker-default:local
-kind load docker-image k8s-remote-debugger-worker-math:local
-helm upgrade --install k8s-remote-debugger ./chart
-```
-
-### minikube
-
-```bash
-docker build -t k8s-remote-debugger:local .
-docker build -f Dockerfile.worker \
-  --build-arg CELERY_WORKER_QUEUE=default \
-  --build-arg CELERY_WORKER_NAME=worker-default \
-  -t k8s-remote-debugger-worker-default:local .
-docker build -f Dockerfile.worker \
-  --build-arg CELERY_WORKER_QUEUE=math \
-  --build-arg CELERY_WORKER_NAME=worker-math \
-  -t k8s-remote-debugger-worker-math:local .
-minikube image load k8s-remote-debugger:local
-minikube image load k8s-remote-debugger-worker-default:local
-minikube image load k8s-remote-debugger-worker-math:local
 helm upgrade --install k8s-remote-debugger ./chart
 ```
 
